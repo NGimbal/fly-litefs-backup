@@ -1,0 +1,10 @@
+{
+  "name": "fly-litefs-backup",
+  "version": "0.0.1",
+  "description": "Service to backup SQLite database to Tigris",
+  "main": "backup.js",
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "@aws-sdk/client-s3": "^3.370.0"
+  }
+}

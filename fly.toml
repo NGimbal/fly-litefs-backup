@@ -1,0 +1,16 @@
+app = 'fly-sqlite-backup'
+primary_region = 'ewr'
+
+[build]
+
+[processes]
+  app = "supercronic /app/crontab"
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[mounts]
+  source = "litefs"
+  destination = "/litefs"
