@@ -44,7 +44,7 @@ In the fly.toml of the app that's running your litefs database, you'll need to e
    protocol = "tcp"
    ```
 
-## How It Works
+## What it does
 
 - Backs up SQLite database every 5 minutes
 - Uploads backups to S3-compatible storage (like Tigris)
