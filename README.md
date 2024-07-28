@@ -1,4 +1,4 @@
-# fly-backup-sqlite
+# fly-litefs-backup
 
 Automated SQLite backup solution for Fly.io applications using LiteFS.
 
