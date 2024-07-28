@@ -34,6 +34,16 @@ Automated SQLite backup solution for Fly.io applications using LiteFS.
    fly deploy
    ```
 
+## Requirements in the app you're backing up
+
+In the fly.toml of the app that's running your litefs database, you'll need to expose the db to your Fly organization's private network. 
+
+   ```
+   [[services]]
+   internal_port = 20202
+   protocol = "tcp"
+   ```
+
 ## How It Works
 
 - Backs up SQLite database every 5 minutes
