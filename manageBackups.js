@@ -10,7 +10,8 @@ const S3 = new S3Client({
 });
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
-const ONE_DAY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+const ONE_DAY = 24 * ONE_HOUR;
 const THREE_MONTHS = 90 * ONE_DAY;
 
 async function listBackups() {
@@ -45,43 +46,58 @@ async function deleteBackup(key) {
 async function manageBackups() {
   const backups = await listBackups();
   const now = new Date();
-  const oneDayAgo = new Date(now - ONE_DAY);
+  const twentyFourHoursAgo = new Date(now - ONE_DAY);
   const threeMonthsAgo = new Date(now - THREE_MONTHS);
 
-  const backupsByDate = new Map();
+  const backupsByHour = new Map();
+  const dailyBackups = new Map();
 
   for (const backup of backups) {
     const backupDate = new Date(backup.LastModified);
-    const dateKey = backupDate.toISOString().split("T")[0];
+    const hourKey = backupDate.toISOString().slice(0, 13); // YYYY-MM-DDTHH
+    const dateKey = backupDate.toISOString().split("T")[0]; // YYYY-MM-DD
 
-    if (!backupsByDate.has(dateKey)) {
-      backupsByDate.set(dateKey, []);
+    // Organize backups by hour for the last 24 hours
+    if (backupDate >= twentyFourHoursAgo) {
+      if (!backupsByHour.has(hourKey)) {
+        backupsByHour.set(hourKey, []);
+      }
+      backupsByHour.get(hourKey).push(backup);
     }
-    backupsByDate.get(dateKey).push(backup);
+
+    // Track the latest backup of each day for daily backups
+    if (
+      !dailyBackups.has(dateKey) ||
+      backupDate > dailyBackups.get(dateKey).LastModified
+    ) {
+      dailyBackups.set(dateKey, backup);
+    }
   }
 
-  for (const [dateKey, dateBackups] of backupsByDate) {
-    const backupDate = new Date(dateKey);
+  // Keep only the latest backup for each hour in the last 24 hours
+  for (const hourlyBackups of backupsByHour.values()) {
+    const sortedBackups = hourlyBackups.sort(
+      (a, b) => b.LastModified - a.LastModified
+    );
+    for (let i = 1; i < sortedBackups.length; i++) {
+      await deleteBackup(sortedBackups[i].Key);
+    }
+  }
 
+  // Manage daily backups
+  for (const [dateKey, backup] of dailyBackups) {
+    const backupDate = new Date(dateKey);
     if (backupDate < threeMonthsAgo) {
-      // Delete all backups older than 3 months
-      for (const backup of dateBackups) {
+      // Delete daily backups older than 3 months
+      await deleteBackup(backup.Key);
+    } else if (backupDate < now.toISOString().split("T")[0]) {
+      // For past days, ensure only the last backup of the day is kept
+      const backupTime = new Date(backup.LastModified).toTimeString();
+      if (backupTime < "23:50:00" || backupTime > "23:59:59") {
         await deleteBackup(backup.Key);
       }
-    } else if (backupDate < oneDayAgo) {
-      // Keep only one backup per day for the past 3 months
-      const sortedBackups = dateBackups.sort(
-        (a, b) => b.LastModified - a.LastModified
-      );
-      for (let i = 1; i < sortedBackups.length; i++) {
-        await deleteBackup(sortedBackups[i].Key);
-      }
     }
-    // Keep all backups for the current day
   }
 }
 
-manageBackups().catch((error) => {
-  console.error("Error managing backups:", error);
-  process.exit(1);
-});
+module.exports = { manageBackups };

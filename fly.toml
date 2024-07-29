@@ -1,4 +1,4 @@
-app = 'fly-sqlite-backup'
+app = 'fly-backup-sqlite'
 primary_region = 'ewr'
 
 [build]

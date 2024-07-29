@@ -5,6 +5,7 @@ const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 const fs = require("fs").promises;
 const path = require("path");
 const util = require("util");
+const { manageBackups } = require("./manageBackups");
 
 console.log("Modules imported successfully.");
 
@@ -76,6 +77,10 @@ async function backupDatabase() {
     console.log("Uploading to S3...");
     await S3.send(new PutObjectCommand(uploadParams));
     console.log(`Backup ${backupFile} uploaded successfully.`);
+
+    console.log("Managing backups...");
+    await manageBackups();
+    console.log("Backup management completed.");
   } catch (error) {
     console.error("Error during backup:", error);
   } finally {

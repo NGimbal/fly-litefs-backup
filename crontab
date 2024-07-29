@@ -1,2 +1,1 @@
 */5 * * * * node /app/backup.js
-0 0 * * * node /app/manageBackup.js
